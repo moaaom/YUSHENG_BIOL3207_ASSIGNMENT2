@@ -28,8 +28,9 @@ First, let's load some useful packages.
 # load packages with library()
 library(bookdown)
 library(tidyverse)
+library(metafor)
+library(orchaRd)
 library(patchwork)
-library(GGally)
 library(flextable)
 ```
 
@@ -139,7 +140,7 @@ flextable(ncdata_summary) %>% add_footer_lines(., values = c("ctrl.n, sample siz
 ```
 
 
-Then, we can write the summary statistics in \@ref(tab:resummarytab) into the metadata format.
+Then, we can write the summary statistics in the Table \@ref(tab:resummarytab) into the metadata format.
 ```{r mergeClark, message = F}
 # because we have 6 species and 2 treatments, we need 12 rows to store the summary data
 cmdata <- cmrdata
@@ -160,7 +161,18 @@ tail(data, 15)
 
 Looks good! But there are still some small problems:
 
-1. Entries of species names have spaces. Let's rename them.
+1. column names have spaces. Let's rename them.
+```{r renamecol, message = F}
+# rename the columns
+colnames(data) <- gsub(" ", "_", colnames(data))
+
+# have a quick look
+data
+```
+
+
+
+2. Entries of species names have spaces. Let's rename them again.Less spaces is always better.
 ```{r renamesp, message = F}
 # replace spaces by underline with gsub()
 data$Species <- gsub(" ", "_", data$Species)
@@ -169,29 +181,87 @@ data$Species <- gsub(" ", "_", data$Species)
 head(data)
 ```
 
-2. There are some "-" in column `Pub year IF`, `2017 IF` and `Cue/stimulus type`. Let's replace them by `NA`.
+3. There are some "-" in column `Pub_year_IF`, `2017_IF` and `Cue/stimulus_type`. Let's replace them by `NA`.
 ```{r replace-, message = F}
 # replace - by NA with gsub()
-data$`Pub year IF` <- gsub("-", NA, data$`Pub year IF`)
-data$`2017 IF` <- gsub("-", NA, data$`2017 IF`)
-data$`Cue/stimulus type` <- gsub("-", NA, data$`Cue/stimulus type`)
+data$Pub_year_IF <- gsub("-", NA, data$Pub_year_IF)
+data$`2017_IF` <- gsub("-", NA, data$`2017_IF`)
+data$`Cue/stimulus_type` <- gsub("-", NA, data$`Cue/stimulus_type`)
 ```
 
+4. Add a column `observation` to mark each row.
+```{r obs, message = F}
+# add a column of row numbers
+data <- tibble(Obs = 1 : nrow(data), data)
+
+# have a quick look
+head(data)
+```
+
+
 Good job! Now, we finish our data cleansing and can output the new metadata file.
-```{r output, message = F}
+```{r outputdata, message = F}
 # output a .csv file
 write_csv(data, "./out_data/metadata.csv")
 ```
 
+# Meta-analysis
 
+## Meta-analytis models
 
+First, let's calculate the effect sizes. We will use the log response ratio, which is ‘ROM’ in Metafor.
+```{r, RRcal, message = F}
+# calculate log response ratio (ROM), where should be given the mean, sample size and standard deviation of experiment and control groups.
+InRR <- escalc(measure= "ROM", m1i = oa.mean, sd1i = oa.sd, n1i = oa.n, m2i = ctrl.mean, sd2i = ctrl.sd, n2i = ctrl.n, data = data, var.names = c("InRR", "InRR_V"))
 
+# have a quick look
+head(InRR)
+```
 
+Oops! We have some NaNs. They are meaningless to our the rest study. Let's remove them.
+```{r nanrm, message = F}
+# remove rows containing NA
+cInRR <- InRR %>% filter(., complete.cases(.))
+```
 
+It time to out put our meta-analysis data. In which the column `InRR` is log response ratio, and column `InRR_V` is sampling variance of lnRR. 
+```{r outputmetadata, message = F}
+# output a .csv file
+write_csv(data, "./out_data/InRR_metadata.csv")
+```
 
+Now, we start to use a multilevel meta-analytic model.
+```{r MLMA, message = F, warning = F}
+# do a multilevel meta-analytic model with random effect of study and observation
+MLMA <- rma.mv(yi = InRR ~ 1, V = InRR_V,
+               # via restricted maximum likelihood
+               method = "REML",
+               # estimate a random effect variance between study and observation
+               random = list(~1 | Study,
+                             ~1 | Obs),
+               # use t-test rather than z-test
+               test = "t",
+               # calculate the degrees of freedom based on the lowest clustering level
+               dfs = "contain",
+               data = cInRR)
+MLMA
+```
 
+We can see from above: 1) Overall meta-analytic mean is `r coef(MLMA)`, and 2) 95% confidence interval is `r MLMA$ci.lb` to `r MLMA$ci.ub`
 
+## Heterogeneity Analysis
 
+Now, we start to measure the heterogeneity in effect size estimates across studies.
+```{r I2, message = F}
+# calculate I^2 by i2_ml()
+i2_ml(MLMA, data = cInRR)
+```
+
+Then, we calculate the prediction interval for heterogeneity
+```{r pi, message = F}
+# calculate prediction interval by predict()
+predict(MLMA)
+```
 
 
 
