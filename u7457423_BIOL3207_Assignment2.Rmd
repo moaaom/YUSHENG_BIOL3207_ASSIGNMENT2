@@ -1,0 +1,211 @@
+---
+title: "BIOL3207_Assignment2"
+author: "Yusheng_Wang_u7457423"
+date: "`r Sys.Date()`"
+output: 
+  bookdown::html_document2:
+    code_folding: show
+    number_sections: no
+    toc: yes
+    toc_depth: 6
+    toc_float: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(digits=2)
+```
+# Git Hub Repo
+
+[My GitHub Repository](https://github.com/moaaom/YUSHENG_BIOL3207_ASSIGNMENT2.git)
+
+# Data Cleansing
+
+## Load Packages and Data
+
+First, let's load some useful packages.
+```{r loadpackages, message = F, results='hide'}
+# load packages with library()
+library(bookdown)
+library(tidyverse)
+library(patchwork)
+library(GGally)
+library(flextable)
+```
+
+Then, let's read data.
+```{r readdata, message = F}
+# read raw data from Clark et al. (2020)
+crdata <- read_csv ("./raw_data/OA_activitydat_20190302_BIOL3207.csv")
+
+# read metadata from Clark et al. (2020)
+cmrdata <- read_csv("./raw_data/clark_paper_data.csv")
+
+# read meta-analysis dataset
+mdata <- read_csv("./raw_data/ocean_meta_data.csv")
+```
+
+## Data Analyses for Clark *et al.* (2020)
+
+First, let's remove rows that include NA values. Because they are useless that we cannot guess what the values actually are.
+```{r rmna, message = F}
+# check the completeness of values with complete.cases() and remove NA with filter()
+ncrdata <- crdata %>% filter(., complete.cases(.))
+
+# have a quick look
+head(ncrdata)
+```
+
+Then, let's drop out irrelevant columns. This time, we only need the column `species`, `treatment` and `activity`.
+```{r rmirre}
+# select and keep the three columns
+cdata <- tibble(species = ncrdata$species, treatment = ncrdata$treatment, activity = ncrdata$activity)
+
+# have a quick look
+head(cdata)
+```
+
+classes of columns `species` and `treatment` should be factors. Let's change them.
+```{r refactors, message = F}
+# change the last three column to factors
+cdata$species <- as.factor(cdata$species)
+cdata$treatment <- as.factor(cdata$treatment)
+
+# have a quick look
+head(cdata)
+```
+
+In this tibble, the columns, from left to right, are:
+```{r colmeaning, message = F, eval = F}
+1) Species name: acantho = Acanthochromis polyacanthus; Ambon = Pomacentrus amboinensis; Chromis = Chromis atripectoralis; Humbug = Dascyllus aruanus; Lemon = Pomacentrus moluccensis; whitedams = Dischistodus perspicillatus
+2) Elevated CO2 [CO2] (850-1,050 µatm) or control [Control] (400 - 450 µatm) groups
+3) Number of seconds the fish was active per minute, averaged across the duration of the trial
+```
+
+Then, let's check the structure of the data to find whether there are some spelling issues in columns `species` and `treatment`.
+```{r checkspelling, message = F}
+# show the internal structure with str()
+str(cdata)
+```
+Right! We have 6 species and 2 treatment.
+
+Then, let's check whether or not there are some issues in column `activity`. We can plot box plots to see the outliers for each species.
+```{r checkactivity, message = F, fig.cap = "Box plots for activity of each species."}
+# plot box plot for each species
+ggplot(cdata, aes(x = species, y = activity, col = species)) +
+  geom_boxplot()
+```
+
+It looks great! Although there are some outliers in Figure \@ref(fig:checkactivity), they do not look like mistakes.
+
+Now, we can create a table of summary data that includes: 1) the mean, 2) the standard deviation and 3) the sample sizes of unique fish across all six fish species for each treatment.
+```{r summarytab, message = F, tab.cap= "Summary of activity data from Clark et al. (2020)"}
+# calculate means, SD and N by species and treatment
+cdata_group <- cdata %>% group_by(species, treatment) %>% mutate(size = length(activity), mean_activity = mean(activity), sd_activity = sd(activity))
+
+# delete duplicate data and sort
+cdata_summary <- cdata_group %>% .[, c(-3)] %>% .[!duplicated(.), ] %>% .[order(.$species, .$treatment), ]
+
+# use flextable to render the summary table in a tidy format
+flextable(cdata_summary) %>% add_footer_lines(., values = c("size, sample size", "mean_activity, mean of activity", "sd_activity, standard deviation of activity")) 
+```
+
+## Metadata Formatting
+
+Now, we start to merge the data from Clark et al. (2020) with the "ocean_meta_data.csv".
+
+First, let's re-write the Table \@ref(tab:summarytab) to one species in one row.
+```{r widesummarytab, message = F}
+# write a new tibble with pivot_wider() to divide the old tibble by treatment
+ncdata_summary <- cdata_summary %>% pivot_wider(id_cols = species, names_from = treatment, values_from = c(size, mean_activity, sd_activity))
+
+# have a quick look
+ncdata_summary
+```
+
+Looks great! Now, let's give the full species name, re-order and re-name these columns to meet format of the metadata file.
+```{r resummarytab, message = F, tab.cap= "Wider summary of activity data from Clark et al. (2020)"}
+# give the full species name
+ncdata_summary$species <- c("Acanthochromis polyacanthus", "Pomacentrus amboinensis", "Chromis atripectoralis", "Dascyllus aruanus", "Pomacentrus moluccensis", "Dischistodus perspicillatus")
+
+# re-order the tibble
+ncdata_summary <- ncdata_summary[, c(1, 3, 5, 7, 2, 4, 6)]
+
+# re-name the tibble
+names(ncdata_summary) <- c("Species", "ctrl.n", "ctrl.mean", "ctrl.sd", "oa.n", "oa.mean", "oa.sd")
+
+# have a quick look with flextable()
+flextable(ncdata_summary) %>% add_footer_lines(., values = c("ctrl.n, sample size of control group", "ctrl.mean, mean activity of control group", "ctrl.sd, standard deviation of activity of control group", "oa.n, sample size of treatment group", "oa.mean, mean activity of treatment group", "oa.sd, standard deviation of activity of treatment group"))
+```
+
+
+Then, we can write the summary statistics in \@ref(tab:resummarytab) into the metadata format.
+```{r mergeClark, message = F}
+# because we have 6 species and 2 treatments, we need 12 rows to store the summary data
+cmdata <- cmrdata
+cmdata[1:12, ] <- cmrdata[1, ]
+
+# bind the new tibble
+fcdata <- cbind(cmdata, ncdata_summary)
+```
+
+Finally, let's add the final tibble into the "ocean_meta_data.csv".
+```{r mergefinal, message = F}
+# add the tibble with marge() to let the column names to automatch
+data <- rbind(mdata, fcdata)
+
+# have a quick look
+tail(data, 15)
+```
+
+Looks good! But there are still some small problems:
+
+1. Entries of species names have spaces. Let's rename them.
+```{r renamesp, message = F}
+# replace spaces by underline with gsub()
+data$Species <- gsub(" ", "_", data$Species)
+
+# have a quick look
+head(data)
+```
+
+2. There are some "-" in column `Pub year IF`, `2017 IF` and `Cue/stimulus type`. Let's replace them by `NA`.
+```{r replace-, message = F}
+# replace - by NA with gsub()
+data$`Pub year IF` <- gsub("-", NA, data$`Pub year IF`)
+data$`2017 IF` <- gsub("-", NA, data$`2017 IF`)
+data$`Cue/stimulus type` <- gsub("-", NA, data$`Cue/stimulus type`)
+```
+
+Good job! Now, we finish our data cleansing and can output the new metadata file.
+```{r output, message = F}
+# output a .csv file
+write_csv(data, "./out_data/metadata.csv")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
