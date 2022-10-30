@@ -2,6 +2,7 @@
 title: "BIOL3207_Assignment2"
 author: "Yusheng_Wang_u7457423"
 date: "`r Sys.Date()`"
+bibliography: "./refs.bib"
 output: 
   bookdown::html_document2:
     code_folding: show
@@ -316,7 +317,7 @@ ymMLMR <- rma.mv(InRR ~ Year_.online., V = InRR_V,
                               ~1 | Obs),
                 test = "t",
                 dfs = "contain",
-                data = yInRR)
+                data = cInRR)
 ymMLMR
 ```
 
@@ -340,14 +341,14 @@ The publication year explains `r r2_y[1]` of the variation in InRR. As we got fr
 
 
 2. Use `Climate_.FishBase.` as a moderator. We can test the correlation between different climatic region and InRR with multilevel meta-regression.
-```{r smMLMR, message = F, warning = F}
+```{r cmMLMR, message = F, warning = F}
 # do multilevel meta-regression
 cmMLMR <- rma.mv(InRR ~ Climate_.FishBase., V = InRR_V, 
                 random = list(~1 | Study,
                               ~1 | Obs),
                 test = "t",
                 dfs = "contain",
-                data = yInRR)
+                data = cInRR)
 ```
 
 Then, make a forest plot to show the statistics above visually.
@@ -376,7 +377,7 @@ lmMLMR <- rma.mv(InRR ~ Life_stage, V = InRR_V,
                               ~1 | Obs),
                 test = "t",
                 dfs = "contain",
-                data = yInRR)
+                data = cInRR)
 
 ```
 
@@ -406,7 +407,7 @@ jmMLMR <- rma.mv(InRR ~ Journal, V = InRR_V,
                               ~1 | Obs),
                 test = "t",
                 dfs = "contain",
-                data = yInRR)
+                data = cInRR)
 
 ```
 
@@ -429,14 +430,14 @@ smMLMR <- rma.mv(InRR ~ Species, V = InRR_V,
                               ~1 | Obs),
                 test = "t",
                 dfs = "contain",
-                data = yInRR)
+                data = cInRR)
 
 ```
 
 Because there are so many species, we do not make a forest plot again.
 
 Finally, we calculate how many variation does different species explain in InRR.
-```{r r2_j, message = F}
+```{r r2_s, message = F}
 # calculate heterogeneity
 r2_s <- r2_ml(smMLMR)
 r2_s
@@ -585,13 +586,94 @@ r2_if
 ```
 The time-lag explains `r r2_if[1]` of the variation in InRR. As we got from the Figure \@ref(fig:if), there is a strong evidence for publication bias that some journals are more likely to publish studies with high effect size.
 
-Up to now, we can make a summary for out publication biases analyses.
+Up to now, based on the results above, we can make a summary for out publication biases analyses.
 
-1. About the p-value of studies, we can see in the Figure \@ref(fig:funnel):
+1. About the significance bias.
 
-1. There are relatively less points in the bottom right corner than bottom left corner. This suggests that researches that show ocean acidification slightly make the fish more active are less likely to be published.
+We can see from the Figure \@ref(fig:funnel), researches that show ocean acidification slightly make the fish more active are less likely to be published; while researches that show ocean acidification significantly make the fish more active are easy to be published, although they have low sample sizes. This bias probably caused by the excessive pursuit of significance in academia. People tend to see a significant effect rather than no effect. So, more significant results are published, ignoring insignificant results, although it is likely that these insignificant results account for the majority.
 
-2. There are relativel more points in the right part with low Inverse Standard Error than left part. This suggest researches that show ocean acidification significantly make the fish more active are easy to be published, although they have low sample sizes.
+
+2. About the time-lag bias.
+
+We can see from the Figure \@ref(fig:year) and MLMR anlysis, those early studies appear to have a far higher effect size compared with studies that are done in later years. This bias probably caused by the initial study in this field are sometimes not rigorous enough and tend to produce "exciting" results. This will lead the initial results are inflated, usually lower powered, and over time effects converge on ‘true’ effect.
+
+3. About the IF bias.
+
+We can see from the Figure \@ref(fig:if) and MLMR analysis, some journals with high impact factors are more likely to publish studies with large effect sizes, even though their precision are small. This bias probably caused by the journal with high IF want to publish more "outstanding" results in one field, rather than a lot of insignificant results.
+
+Studies Contributing to Bias
+
+Now, we start to identify any studies contributing to publication bias discussed above.
+
+For the significance bias, it seems like a overall probem that cannot by correct by removing some of these studies. To avoid this bias, we can only hope that journals will treat any results equally, regardless of whether they are significant or not. On the other hand, researchers should also ensure these insignificant results are not caused by mistakes. In other words, the insignificant results should also be "reliable".
+
+For the time-lag bias, we can filter the "outstanding" results in year `2009`, `2010` and `2014`.
+```{r findy, message = F}
+# filter the outstanding studies
+head(filter(cInRR, (Year_.online. == 2009 & InRR > 5) | (Year_.online. == 2010 & InRR > 5) | (Year_.online. == 2014 & InRR > 5)))
+```
+
+We can see the outstanding values are from study `a2` and `a3`. Let's remove the two study and make a plot again to see the time-lag bias.
+```{r filtery, message = F, fig.cap = "Edited relationship between InRR and the year of publication."}
+# filter out the two studies
+fInRR <- filter(yInRR, (Study != "a2" & Study != "a3" & Study != "a31"))
+
+# plot again
+ggplot(fInRR, aes(x = Year_.online., y = InRR)) +
+  # make a point plot with different size of different precision
+  geom_point(alpha = 0.3, aes(size = 1/sqrt(InRR_V))) +
+  # make a regression line with linear model
+  geom_smooth(method = "lm", col = "red") +
+  # for aesthetics
+  labs(x = "Publication Year", y = "Log Response Ratio (InRR)", size = "Precision (1/SE)") + theme_classic()
+```
+
+For the time-lag bias, we can filter the "outstanding" results with IF > 9.
+```{r findi, message = F}
+# filter the outstanding studies
+head(filter(cInRR, Pub_year_IF > 9))
+```
+
+We can see the outstanding values are from study `a1` and `a3`. `a3` is outstanding twice! Let's remove the two study and make a plot again to see the time-lag bias.
+```{r filteri, message = F, fig.width = 20, fig.cap = "Edited relationship between InRR and the imoact factors."}
+# filter out the two studies
+fInRR <- filter(yInRR, (Study != "a1" & Study != "a3" & Study != "a31"))
+
+# plot again
+ggplot(fInRR, aes(x = Pub_year_IF, y = InRR)) +
+  # make a point plot with different size of different precision
+  geom_point(alpha = 0.3, aes(size = 1/sqrt(InRR_V))) +
+  # make a regression line with linear model
+  geom_smooth(method = "lm", col = "red") +
+  # for aesthetics
+  labs(x = "Publication Year", y = "Log Response Ratio (InRR)", size = "Precision (1/SE)") + theme_classic()
+```
+
+Overall, `a3` is really a "suspect" study and should be concerned more. Let's read more on Munday *et al.* (2010).
+
+In their study, they investigate the effect of ocean acidification to larval clownfish from the Great Barrier Reef. These characteristic corresponds to two elements that we concluded in the the Figure \@ref(fig:forest3) and Figure \@ref(fig:forest4), `Trop` and `larvae`! Meanwhile, the clownfish lives in coral.Ocean acidification is likely to damage corals, which in turn affects the habitat and behaviour of these fish. This is why do we not see such big effect sizes in other studies. So, the big effect size in Munday *et al.* (2010) is not a universal situation. While citing this article, we should also consider its particularity and the insignificant results of other studies, rather than only relying on impact factor.
+
+Comparing with a meta-analysis by Clement *et al.* (2022), my updated meta-analysis results and their paper all focus on publication including methodological biases, selective publication bias, time-lag bias and citation bias. Because the new added paper from Clark *et al.* (2020) also just showed weak correlation between acidification and fish activity.
+
+Remarkably, in the original data file from Clement *et al.* (2022), the value of column `Average_n` should be the average of the column `ctrl.n` and `oa.n`. But entries of the study `a2` seem not.
+
+```{r mis, message = F}
+# show study a2
+tibble(data$Study, data$Average_n, data$ctrl.n, data$oa.n) %>% filter(., data$Study == "a2")
+```
+
+
+The authors probably made some mistakes, So, these kind of type error can also be "sampling variance", but we should try our best to avoid it.
+
+## References
+
+
+
+
+
+
+
+
 
 
 
