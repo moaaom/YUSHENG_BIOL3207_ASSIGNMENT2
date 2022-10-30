@@ -2,7 +2,6 @@
 title: "BIOL3207_Assignment2"
 author: "Yusheng_Wang_u7457423"
 date: "`r Sys.Date()`"
-bibliography: "./refs.bib"
 output: 
   bookdown::html_document2:
     code_folding: show
@@ -16,11 +15,11 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 options(digits=2)
 ```
-# Git Hub Repo
+# **Git Hub Repository**
 
 [My GitHub Repository](https://github.com/moaaom/YUSHENG_BIOL3207_ASSIGNMENT2.git)
 
-# Data Cleansing
+# **Data Cleansing**
 
 ## Load Packages and Data
 
@@ -48,7 +47,7 @@ cmrdata <- read_csv("./raw_data/clark_paper_data.csv")
 mdata <- read_csv("./raw_data/ocean_meta_data.csv")
 ```
 
-## Data Analyses for Clark *et al.* (2020)
+## Data Analyses for [Clark *et al.* (2020)](https://doi.org/10.1038/s41586-019-1903-y)
 
 First, let's remove rows that include NA values. Because they are useless that we cannot guess what the values actually are.
 ```{r rmna, message = F}
@@ -59,7 +58,7 @@ ncrdata <- crdata %>% filter(., complete.cases(.))
 head(ncrdata)
 ```
 
-Then, let's drop out irrelevant columns. This time, we only need the column `species`, `treatment` and `activity`.
+Then, let's drop irrelevant columns. This time, we only need the column `species`, `treatment` and `activity`.
 ```{r rmirre}
 # select and keep the three columns
 cdata <- tibble(species = ncrdata$species, treatment = ncrdata$treatment, activity = ncrdata$activity)
@@ -68,7 +67,7 @@ cdata <- tibble(species = ncrdata$species, treatment = ncrdata$treatment, activi
 head(cdata)
 ```
 
-classes of columns `species` and `treatment` should be factors. Let's change them.
+The classes of columns `species` and `treatment` should be factors. Let's change them.
 ```{r refactors, message = F}
 # change the last three column to factors
 cdata$species <- as.factor(cdata$species)
@@ -80,29 +79,38 @@ head(cdata)
 
 In this tibble, the columns, from left to right, are:
 ```{r colmeaning, message = F, eval = F}
-1) Species name: acantho = Acanthochromis polyacanthus; Ambon = Pomacentrus amboinensis; Chromis = Chromis atripectoralis; Humbug = Dascyllus aruanus; Lemon = Pomacentrus moluccensis; whitedams = Dischistodus perspicillatus
+1) Species name:
+  acantho = Acanthochromis polyacanthus;
+  ambon = Pomacentrus amboinensis;
+  chromis = Chromis atripectoralis;
+  humbug = Dascyllus aruanus;
+  lemon = Pomacentrus moluccensis;
+  whitedams = Dischistodus perspicillatus
 2) Elevated CO2 [CO2] (850-1,050 µatm) or control [Control] (400 - 450 µatm) groups
 3) Number of seconds the fish was active per minute, averaged across the duration of the trial
 ```
 
-Then, let's check the structure of the data to find whether there are some spelling issues in columns `species` and `treatment`.
+Then, let's check the structure of the data to find whether there are some spelling errors in the columns `species` and `treatment`.
 ```{r checkspelling, message = F}
 # show the internal structure with str()
 str(cdata)
 ```
 Right! We have 6 species and 2 treatment.
 
-Then, let's check whether or not there are some issues in column `activity`. We can plot box plots to see the outliers for each species.
-```{r checkactivity, message = F, fig.cap = "Box plots for activity of each species."}
+Then, let's check whether or not there are some errors in the column `activity`. We can plot box plots to see the outliers for each species.
+```{r checkactivity, message = F, fig.cap = "Box plots for activities of each species."}
 # plot box plot for each species
 ggplot(cdata, aes(x = species, y = activity, col = species)) +
   geom_boxplot()
 ```
 
-It looks great! Although there are some outliers in Figure \@ref(fig:checkactivity), they do not look like mistakes.
+It looks great! Although there are some outliers in the Figure \@ref(fig:checkactivity), they do not look like errors.
 
-Now, we can create a table of summary data that includes: 1) the mean, 2) the standard deviation and 3) the sample sizes of unique fish across all six fish species for each treatment.
-```{r summarytab, message = F, tab.cap= "Summary of activity data from Clark et al. (2020)"}
+Now, we can create a table for summarising data that includes:
+1. the mean;
+2. the standard deviation;
+3. the sample sizes of unique fish across all six fish species for each treatment.
+```{r summarytab, message = F, tab.cap= "Summary of activity data from Clark et al. (2020)."}
 # calculate means, SD and N by species and treatment
 cdata_group <- cdata %>% group_by(species, treatment) %>% mutate(size = length(activity), mean_activity = mean(activity), sd_activity = sd(activity))
 
@@ -115,7 +123,7 @@ flextable(cdata_summary) %>% add_footer_lines(., values = c("size, sample size",
 
 ## Metadata Formatting
 
-Now, we start to merge the data from Clark et al. (2020) with the "ocean_meta_data.csv".
+Now, we start to merge the data from [Clark *et al.* (2020)](https://doi.org/10.1038/s41586-019-1903-y) with the format `ocean_meta_data.csv`.
 
 First, let's re-write the Table \@ref(tab:summarytab) to one species in one row.
 ```{r widesummarytab, message = F}
@@ -126,8 +134,8 @@ ncdata_summary <- cdata_summary %>% pivot_wider(id_cols = species, names_from = 
 ncdata_summary
 ```
 
-Looks great! Now, let's give the full species name, re-order and re-name these columns to meet format of the metadata file.
-```{r resummarytab, message = F, tab.cap= "Wider summary of activity data from Clark et al. (2020)"}
+Looks great! Now, let's give the full species name, re-order and re-name these columns to meet the format of the metadata file.
+```{r resummarytab, message = F, tab.cap= "Wider summary of activity data from Clark et al. (2020)."}
 # give the full species name
 ncdata_summary$species <- c("Acanthochromis polyacanthus", "Pomacentrus amboinensis", "Chromis atripectoralis", "Dascyllus aruanus", "Pomacentrus moluccensis", "Dischistodus perspicillatus")
 
@@ -152,9 +160,9 @@ cmdata[1:12, ] <- cmrdata[1, ]
 fcdata <- cbind(cmdata, ncdata_summary)
 ```
 
-Finally, let's add the final tibble into the "ocean_meta_data.csv".
+Finally, let's add the final tibble into the file `ocean_meta_data.csv`.
 ```{r mergefinal, message = F}
-# add the tibble with marge() to let the column names to automatch
+# add the tibble with rbind() to let the column names to automatch
 data <- rbind(mdata, fcdata)
 
 # have a quick look
@@ -163,7 +171,7 @@ tail(data, 15)
 
 Looks good! But there are still some small problems:
 
-1. column names have spaces. Let's rename them.
+1. Column names have spaces. Let's rename them.
 ```{r renamecol, message = F}
 # rename the columns
 colnames(data) <- gsub(" ", "_", colnames(data))
@@ -172,7 +180,7 @@ colnames(data) <- gsub(" ", "_", colnames(data))
 data
 ```
 
-2. Entries of species names have spaces. Let's rename them again.Less spaces is always better.
+2. Entries of species names have spaces. Let's rename them again. Less spaces is always better!
 ```{r renamesp, message = F}
 # replace spaces by underline with gsub()
 data$Species <- gsub(" ", "_", data$Species)
@@ -181,7 +189,7 @@ data$Species <- gsub(" ", "_", data$Species)
 head(data)
 ```
 
-3. There are some "-" in column `Pub_year_IF`, `2017_IF` and `Cue/stimulus_type`. Let's replace them by `NA`.
+3. There are some "-" in column `Pub_year_IF`, `2017_IF` and `Cue/stimulus_type`. Let's replace them with `NA`.
 ```{r replace-, message = F}
 # replace - by NA with gsub()
 data$Pub_year_IF <- gsub("-", NA, data$Pub_year_IF)
@@ -189,7 +197,7 @@ data$`2017_IF` <- gsub("-", NA, data$`2017_IF`)
 data$`Cue/stimulus_type` <- gsub("-", NA, data$`Cue/stimulus_type`)
 ```
 
-4. Add a column `observation` to mark each row.
+4. Add a column `Obs` to mark each row.
 ```{r obs, message = F}
 # add a column of row numbers
 data <- tibble(Obs = 1 : nrow(data), data)
@@ -216,34 +224,34 @@ Good job! Now, we finish our data cleansing and can output the new metadata file
 write_csv(data, "./out_data/metadata.csv")
 ```
 
-# Meta-analysis
+# **Overall Meta-analyses**
 
-## Overall Meta-analytis and Heterogeneity Analysis
+## Meta-analyses
 
-First, let's calculate the effect sizes. We will use the log response ratio, which is ‘ROM’ in Metafor.
+First, let's calculate the effect sizes. We will use the log response ratio, which is ‘ROM’ in argument `measure`.
 ```{r, RRcal, message = F}
 # calculate log response ratio (ROM), where should be given the mean, sample size and standard deviation of experiment and control groups.
-InRR <- escalc(measure= "ROM", m1i = oa.mean, sd1i = oa.sd, n1i = oa.n, m2i = ctrl.mean, sd2i = ctrl.sd, n2i = ctrl.n, data = data, var.names = c("InRR", "InRR_V"))
+lnRR <- escalc(measure= "ROM", m1i = oa.mean, sd1i = oa.sd, n1i = oa.n, m2i = ctrl.mean, sd2i = ctrl.sd, n2i = ctrl.n, data = data, var.names = c("lnRR", "lnRR_V"))
 
 # have a quick look
-head(InRR)
+head(lnRR)
 ```
 
 Oops! We have some NaNs. This is because there are some negative value in `ctrl.mean` and `oa.mean`, which cause the logarithm to fail to be calculated. They are  meaningless to our the rest study. Let's remove them.
 ```{r nanrm, message = F}
 # remove rows containing NA
-cInRR <- InRR %>% filter(., complete.cases(.$InRR) & complete.cases(.$InRR_V))
+clnRR <- lnRR %>% filter(., complete.cases(.$lnRR) & complete.cases(.$lnRR_V))
 ```
 
 Let's make some box plot to see whether or not there are some outliers.
-```{r outlier, message = F, fig.cap = "a) Box plot for log response ratio (InRR). b) Box plot for sampling variance of lnRR. There are some extreme outliers in b)"}
-# plot box plot for InRR
-p1 <- ggplot(cInRR, aes(x = InRR))+
+```{r outlier, message = F, fig.cap = "a) Box plot for log response ratio (lnRR). b) Box plot for sampling variance of lnRR. There are some extreme outliers in b)."}
+# plot box plot for lnRR
+p1 <- ggplot(clnRR, aes(x = lnRR))+
   geom_boxplot()+
   ggtitle("a)")
 
-# plot box plot for InRR_V
-p2 <- ggplot(cInRR, aes(x = InRR_V))+
+# plot box plot for lnRR_V
+p2 <- ggplot(clnRR, aes(x = lnRR_V))+
   geom_boxplot()+
   ggtitle("b)")
 
@@ -251,18 +259,20 @@ p2 <- ggplot(cInRR, aes(x = InRR_V))+
 p1 + p2
 ```
 
-It looks like there are many extreme outliers in plot b) of the Figure \@ref(fig:outlier). But, that's what meta-analysis does, finding the gaps in previous experiments and analyzing them again. So, we can maintain these outliers.
+It looks like there are many extreme outliers in plot b) of the Figure \@ref(fig:outlier). But, that's meta-analysis, finding the gaps in previous studies and re-analyzing them again. So, we can maintain these outliers.
 
-It time to out put our meta-analysis data. In which the column `InRR` is log response ratio, and column `InRR_V` is sampling variance of lnRR. 
+It time to out put our meta-analysis data. In which the column `lnRR` is log response ratio, and column `lnRR_V` is sampling variance of lnRR. 
 ```{r outputmetadata, message = F}
 # output a .csv file
-write_csv(cInRR, "./out_data/InRR_metadata.csv")
+write_csv(clnRR, "./out_data/lnRR_metadata.csv")
 ```
+
+## Heterogeneity Analyses
 
 Now, we start to use a multilevel meta-analytic model.
 ```{r MLMA, message = F, warning = F}
 # do a multilevel meta-analytic model with random effect of study and observation
-MLMA <- rma.mv(yi = InRR ~ 1, V = InRR_V,
+MLMA <- rma.mv(yi = lnRR ~ 1, V = lnRR_V,
                # via restricted maximum likelihood
                method = "REML",
                # estimate a random effect variance between study and observation
@@ -272,14 +282,14 @@ MLMA <- rma.mv(yi = InRR ~ 1, V = InRR_V,
                test = "t",
                # calculate the degrees of freedom based on the lowest clustering level
                dfs = "contain",
-               data = cInRR)
+               data = clnRR)
 MLMA
 ```
 
 Now, we start to measure the heterogeneity in effect size estimates across studies.
 ```{r I2, message = F}
 # calculate I^2 by i2_ml()
-i2 <- i2_ml(MLMA, data = cInRR)
+i2 <- i2_ml(MLMA, data = clnRR)
 i2
 ```
 
@@ -290,167 +300,169 @@ preMLMA <- predict(MLMA)
 preMLMA
 ```
 
-Let's make a overall forest plot to show the statistics above visually. Because we need a overall mean estimate for InRR, we only estimate the `intercept`.
-```{r forest1, message = F, fig.cap = "Orchard plot showing the mean InRR. k = the number of effect sizes and the number of studies are in brackets. The number of samples is shown in blue circle"}
+Let's make a overall forest plot to show the statistics above visually. Because we need a overall mean estimate for lnRR, we only estimate the `intercept`.
+```{r forest1, message = F, fig.cap = "Orchard plot showing the mean lnRR. k = the number of effect sizes and the number of studies are in brackets. The number of samples is shown in blue circle."}
 # use orchard_plot() to make a modified forest plot
 # argument mod = "1" means calculate the intercept, argument N = "Average_n" means show the sample size instead of precision
-orchard_plot(MLMA, mod = "1", group = "Study", data = cInRR, xlab = "Log Response Ratio (InRR)", angle = 45, N = "Average_n")
+orchard_plot(MLMA, mod = "1", group = "Study", data = clnRR, xlab = "Log Response Ratio (lnRR)", angle = 45, N = "Average_n")
 ```
 
 Now, we can do a summary of these overall meta-analysis above:
 
-1. From the multilevel meta-analytic model, the overall meta-analytic mean is `r coef(MLMA)`, which suggests that for every 1 unit increase in ocean acidification, the fish behavior measurement increases by `r coef(MLMA)` unit. This mean can be supported with the Figure \@ref(fig:forest1) that the black hollow circle representing the mean is very close to the vertical dotted line (0 of InRR).
+1. From the multilevel meta-analytic model, the overall meta-analytic mean is `r coef(MLMA)`, which suggests that for every 1 unit increase in ocean acidification, the fish behavior measurement increases by `r coef(MLMA)` unit. This mean can be supported with the Figure \@ref(fig:forest1) that the black hollow circle representing the mean is very close to the vertical dotted line (0 of lnRR).
 
 2. From the multilevel meta-analytic model, the 95% confidence interval is `r MLMA$ci.lb` to `r MLMA$ci.ub`, which suggests that we are 95% confident that the true mean falls between `r MLMA$ci.lb` and `r MLMA$ci.ub`.
  
-3. From the heterogeneity analysis, we do have a significant amount of heterogeneity among effects (Q = `r MLMA$QE`, df = 806, p = <0.001), with effect sizes expected to be as low as `r preMLMA$pi.lb` to as high as `r preMLMA$pi.ub`. This interval interval can also be supported with the Figure \@ref(fig:forest1) that the horizontal solid black line representing the 95% confidence interval is very close to the vertical dotted line (0 of InRR).
+3. From the heterogeneity analysis, we do have a significant amount of heterogeneity among effects (Q = `r MLMA$QE`, df = 806, p = <0.001), with effect sizes expected to be as low as `r preMLMA$pi.lb` to as high as `r preMLMA$pi.ub`. This interval interval can also be supported with the Figure \@ref(fig:forest1) that the horizontal solid black line representing the 95% confidence interval.
 
 4. From the heterogeneity analysis, 95% of the time (*I<sup>2</sup>*total = `r i2[1]`). Differences among study and obvious explain `r i2[2]` and `r i2[3]` of effect size variation, respectively.
 
 We can make more forest plots with other moderators:
 
-1. Use `Year_.online.` as a moderator. We can test the correlation between publication year and InRR with multilevel meta-regression.
+1. Use `Year_(online)` as a moderator. We can test the correlation between publication year and lnRR with multilevel meta-regression.
 ```{r ymMLMR, message = F, warning = F}
 # do multilevel meta-regression
-ymMLMR <- rma.mv(InRR ~ Year_.online., V = InRR_V, 
+ymMLMR <- rma.mv(lnRR ~ Year_.online., V = lnRR_V, 
                 random = list(~1 | Study,
                               ~1 | Obs),
                 test = "t",
                 dfs = "contain",
-                data = cInRR)
+                data = clnRR)
 ymMLMR
 ```
 
 Then, make a forest plot to show the statistics above visually.
-```{r forest2, message = F, fig.cap = "Orchard plot showing the mean InRR of each publication year. k = the number of effect sizes and the number of studies are in brackets. The number of samples is shown in blue circle"}
+```{r forest2, message = F, fig.cap = "Orchard plot showing the mean lnRR of each publication year. k = the number of effect sizes and the number of studies are in brackets. The number of samples is shown in color circle"}
 # use orchard_plot() to make a modified forest plot
 # argument N = "Average_n" means show the sample size instead of precision
-orchard_plot(ymMLMR, mod = "Year_.online.", group = "Study", data = cInRR, xlab = "Log Response Ratio (InRR)", angle = 45, N = "Average_n")
+orchard_plot(ymMLMR, mod = "Year_.online.", group = "Study", data = clnRR, xlab = "Log Response Ratio (lnRR)", angle = 45, N = "Average_n")
 ```
 
-We can see from the Figure \@ref(fig:forest2), the black hollow circle representing the mean InRR of year `2009` and `2010` are relatively far from the vertical dotted line (0 of InRR). This could suggest that early studies appear to have a far higher effect size.
+We can see from the Figure \@ref(fig:forest2), the black hollow circle representing the mean lnRR of year `2009` and `2010` are relatively far from the vertical dotted line (0 of lnRR). This could suggest that early studies appear to have a far higher effect size.
 
-Finally, we calculate how many variation does time when results were published explain in InRR.
+Finally, we calculate how many variation does time when results were published explain in lnRR.
 ```{r r2_y, message = F}
 # calculate heterogeneity
 r2_y <- r2_ml(ymMLMR)
 r2_y
 ```
 
-The publication year explains `r r2_y[1]` of the variation in InRR. As we got from the Figure \@ref(fig:forest2), there could be a correlation between InRR and publication year. We will test it again in details in publication bias part below.
+The publication year explains `r r2_y[1]` of the variation in lnRR. As we got from the Figure \@ref(fig:forest2), there could be a correlation between lnRR and publication year. We will test it again in details in publication bias part below.
 
 
-2. Use `Climate_.FishBase.` as a moderator. We can test the correlation between different climatic region and InRR with multilevel meta-regression.
+2. Use `Climate_(FishBase)` as a moderator. We can test the correlation between different climatic region and lnRR with multilevel meta-regression.
 ```{r cmMLMR, message = F, warning = F}
 # do multilevel meta-regression
-cmMLMR <- rma.mv(InRR ~ Climate_.FishBase., V = InRR_V, 
+cmMLMR <- rma.mv(lnRR ~ Climate_.FishBase., V = lnRR_V, 
                 random = list(~1 | Study,
                               ~1 | Obs),
                 test = "t",
                 dfs = "contain",
-                data = cInRR)
+                data = clnRR)
 ```
 
 Then, make a forest plot to show the statistics above visually.
-```{r forest3, message = F, fig.cap = "Orchard plot showing the mean InRR of impact factor. k = the number of effect sizes and the number of studies are in brackets. The number of samples is shown in blue circle"}
+```{r forest3, message = F, fig.cap = "Orchard plot showing the mean lnRR of impact factor. k = the number of effect sizes and the number of studies are in brackets. The number of samples is shown in color circle"}
 # use orchard_plot() to make a modified forest plot
 # argument N = "Average_n" means show the sample size instead of precision
-orchard_plot(cmMLMR, mod = "Climate_.FishBase.", group = "Study", data = cInRR, xlab = "Log Response Ratio (InRR)", angle = 45, N = "Average_n")
+orchard_plot(cmMLMR, mod = "Climate_.FishBase.", group = "Study", data = clnRR, xlab = "Log Response Ratio (lnRR)", angle = 45, N = "Average_n")
 ```
 
-We can see from the Figure \@ref(fig:forest3), the black hollow circle representing the mean InRR of climatic region `Deep` and `Trop` are relatively far from the vertical dotted line (0 of InRR). This could suggest that fishes in the two region are more likely to be affected by ocean acidification.
+We can see from the Figure \@ref(fig:forest3), the black hollow circle representing the mean lnRR of climatic region `Deep` and `Trop` are relatively far from the vertical dotted line (0 of lnRR). This could suggest that fish in the two region are more likely to be affected by ocean acidification.
 
-Finally, we calculate how many variation does different regions explain in InRR.
+Finally, we calculate how many variation does different regions explain in lnRR.
 ```{r r2_c, message = F}
 # calculate heterogeneity
 r2_c <- r2_ml(cmMLMR)
 r2_c
 ```
 
-The climatic region explains `r r2_c[1]` of the variation in InRR. As we got from the Figure \@ref(fig:forest3), there could be a correlation between InRR and climatic region.
+The climatic region explains `r r2_c[1]` of the variation in lnRR. As we got from the Figure \@ref(fig:forest3), there could be a correlation between lnRR and climatic region.
 
-3. Use `Life_stage` as a moderator. We can test the correlation between different life stage and InRR with multilevel meta-regression.
+3. Use `Life_stage` as a moderator. We can test the correlation between different life stage and lnRR with multilevel meta-regression.
 ```{r lmMLMR, message = F, warning = F}
 # do multilevel meta-regression
-lmMLMR <- rma.mv(InRR ~ Life_stage, V = InRR_V, 
+lmMLMR <- rma.mv(lnRR ~ Life_stage, V = lnRR_V, 
                 random = list(~1 | Study,
                               ~1 | Obs),
                 test = "t",
                 dfs = "contain",
-                data = cInRR)
+                data = clnRR)
 
 ```
 
 Then, make a forest plot to show the statistics above visually.
-```{r forest4, message = F, fig.cap = "Orchard plot showing the mean InRR of impact factor. k = the number of effect sizes and the number of studies are in brackets. The number of samples is shown in blue circle"}
+```{r forest4, message = F, fig.cap = "Orchard plot showing the mean lnRR of impact factor. k = the number of effect sizes and the number of studies are in brackets. The number of samples is shown in color circle"}
 # use orchard_plot() to make a modified forest plot
 # argument N = "Average_n" means show the sample size instead of precision
-orchard_plot(lmMLMR, mod = "Life_stage", group = "Study", data = cInRR, xlab = "Log Response Ratio (InRR)", angle = 45, N = "Average_n")
+orchard_plot(lmMLMR, mod = "Life_stage", group = "Study", data = clnRR, xlab = "Log Response Ratio (lnRR)", angle = 45, N = "Average_n")
 ```
 
-We can see from the Figure \@ref(fig:forest4), the black hollow circle representing the mean InRR of life stage `Larvae` is relatively far from the vertical dotted line (0 of InRR). This could suggest that fish larvae is more likely to be affected by ocean acidification.
+We can see from the Figure \@ref(fig:forest4), the black hollow circle representing the mean lnRR of life stage `Larvae` is relatively far from the vertical dotted line (0 of lnRR). This could suggest that fish larvae is more likely to be affected by ocean acidification.
 
-Finally, we calculate how many variation does different regions explain in InRR.
+Finally, we calculate how many variation does different regions explain in lnRR.
 ```{r r2_l, message = F}
 # calculate heterogeneity
 r2_l <- r2_ml(lmMLMR)
 r2_l
 ```
 
-The life stage explains `r r2_l[1]` of the variation in InRR. As we got from the Figure \@ref(fig:forest4), there could be a correlation between InRR and life stage.
+The life stage explains `r r2_l[1]` of the variation in lnRR. As we got from the Figure \@ref(fig:forest4), there could be a correlation between lnRR and life stage.
 
-4. Use `Journal` as a moderator. We can test the correlation between different journals and InRR with multilevel meta-regression.
+4. Use `Journal` as a moderator. We can test the correlation between different journals and lnRR with multilevel meta-regression.
 ```{r jmMLMR, message = F, warning = F}
 # do multilevel meta-regression
-jmMLMR <- rma.mv(InRR ~ Journal, V = InRR_V, 
+jmMLMR <- rma.mv(lnRR ~ Journal, V = lnRR_V, 
                 random = list(~1 | Study,
                               ~1 | Obs),
                 test = "t",
                 dfs = "contain",
-                data = cInRR)
+                data = clnRR)
 
 ```
 
 Because there are so many journals, we do not make a forest plot again.
 
-Finally, we calculate how many variation does different journals explain in InRR.
+Finally, we calculate how many variation does different journals explain in lnRR.
 ```{r r2_j, message = F}
 # calculate heterogeneity
 r2_j <- r2_ml(jmMLMR)
 r2_j
 ```
 
-The life stage explains `r r2_j[1]` of the variation in InRR. So, there could be a correlation between InRR and different journals. Some journals could be more likely publish some kinds of studies (e.g. high effect size).
+The life stage explains `r r2_j[1]` of the variation in lnRR. So, there could be a correlation between lnRR and different journals. Some journals could be more likely publish some kinds of studies (e.g. high effect size).
 
-5. Use `Species` as a moderator. We can test the correlation between different species and InRR with multilevel meta-regression.
+5. Use `Species` as a moderator. We can test the correlation between different species and lnRR with multilevel meta-regression.
 ```{r smMLMR, message = F, warning = F}
 # do multilevel meta-regression
-smMLMR <- rma.mv(InRR ~ Species, V = InRR_V, 
+smMLMR <- rma.mv(lnRR ~ Species, V = lnRR_V, 
                 random = list(~1 | Study,
                               ~1 | Obs),
                 test = "t",
                 dfs = "contain",
-                data = cInRR)
+                data = clnRR)
 
 ```
 
 Because there are so many species, we do not make a forest plot again.
 
-Finally, we calculate how many variation does different species explain in InRR.
+Finally, we calculate how many variation does different species explain in lnRR.
 ```{r r2_s, message = F}
 # calculate heterogeneity
 r2_s <- r2_ml(smMLMR)
 r2_s
 ```
 
-The life stage explains `r r2_s[1]` of the variation in InRR. So, there could be a correlation between InRR and different species. Some species could be more sensitive to ocean acidification.
+The life stage explains `r r2_s[1]` of the variation in lnRR. So, there could be a correlation between lnRR and different species. Some species could be more sensitive to ocean acidification.
 
-## Publication Biases
+# **Publication Biases**
+
+## Significance Bias
 
 Now, we start to find the publication biases. The first thing is make a funnel plot for visually assessing the possibility of publication bias.
 ```{r funnel, message = F, fig.cap = "Funnel plot depicting the correlation between metabolism and fitness as a function of precision (1 / SE). The dotted lines are the theoretical 95% sampling variance intervals - the interval with which we expect effect size estimates to fall within if only sampling variance drives differences in effects. Shaded regions represent the p-value of studies. The white region indicates studies where the p-value is between 0.1 and 1; dark gray where the p-value of studies is between 0.05 and 0.1 and the lighter gray regions where the p-value of studies is significant."}
 # plot a funnel plot
-funnel(x = cInRR$InRR, vi = cInRR$InRR_V,
+funnel(x = clnRR$lnRR, vi = clnRR$lnRR_V,
        # for the inverse of the standard errors
        yaxis = "seinv", 
        # specify the number of decimal places
@@ -458,133 +470,137 @@ funnel(x = cInRR$InRR, vi = cInRR$InRR_V,
        # specify the level of the confidence interval
        level = c(0.1, 0.05, 0.01), shade = c("white", "gray55", "gray 75"), las = 1, 
        # for aesthetics
-       xlab = "Log Response Ratio (InRR)", ylim = c(0.1,5), legend = TRUE)
+       xlab = "Log Response Ratio (lnRR)", ylim = c(0.1,5), legend = TRUE)
 ```
 
-Now, we see some hint from the Figure \@ref(fig:funnel):
+Now, we see some hints from the Figure \@ref(fig:funnel):
 
 1. There are relatively less points in the bottom right corner than bottom left corner. This suggests that researches that show ocean acidification slightly make the fish more active are less likely to be published.
 
 2. There are relativel more points in the right part with low Inverse Standard Error than left part. This suggest researches that show ocean acidification significantly make the fish more active are easy to be published, although they have low sample sizes.
 
-The next step is test for time-lag bias.
+## Time-lag Bias.
 
-First, let's centre the `Year_.online.` variable by subtracting every value of `Year_.online.` by the `mean year`.
+First, let's centre the `Year_(online)` variable by subtracting every value of `Year_(online)` by the `mean(year)`.
 ```{r cyear, message = F}
-# centre the Year_.online.
-yInRR <- cInRR %>% mutate(Year_c = as.numeric(Year_.online.) - mean(as.numeric(Year_.online.)))
+# centre the Year_(online)
+ylnRR <- clnRR %>% mutate(Year_c = as.numeric(Year_.online.) - mean(as.numeric(Year_.online.)))
 
-yInRR <- yInRR %>% group_by(Year_.online.) %>% mutate(ymean = mean(InRR))
+ylnRR <- ylnRR %>% group_by(Year_.online.) %>% mutate(ymean = mean(lnRR))
 
 # have a quicl look
-head(yInRR)
+head(ylnRR)
 ```
 
-Let's make a plot to see whether or not mean InRRs change with publication year.
-```{r year, message = F, fig.cap = "Relationship between InRR and the year of publication. Points are scaled in relation to their precision (1/sqrt(InRR_V)). Small points indicate effects with low precision or high sampling varaince"}
+Let's make a plot to see whether or not mean lnRR change with publication year.
+```{r year, message = F, fig.cap = "Relationship between lnRR and the year of publication. Points are scaled in relation to their precision (1/sqrt(lnRR_V)). Small points indicate effects with low precision or high sampling varaince."}
 # use online publication time as year of publication
-ggplot(yInRR, aes(x = Year_.online., y = InRR)) +
+ggplot(ylnRR, aes(x = Year_.online., y = lnRR)) +
   # make a point plot with different size of different precision
-  geom_point(alpha = 0.3, aes(size = 1/sqrt(InRR_V))) +
+  geom_point(alpha = 0.3, aes(size = 1/sqrt(lnRR_V))) +
   # make a regression line with linear model
   geom_smooth(method = "lm", col = "red") +
   # for aesthetics
-  labs(x = "Publication Year", y = "Log Response Ratio (InRR)", size = "Precision (1/SE)") + theme_classic()
+  labs(x = "Publication Year", y = "Log Response Ratio (lnRR)", size = "Precision (1/SE)") + theme_classic()
 ```
 
 We see some hint from the Figure \@ref(fig:year):
 
-1. It seems like there is a slight correlation between publication year and InRR.
+1. It seems like there is a correlation between publication year and lnRR.
 
-2. These early studies appear to have a far higher effect size (InRR) compared with studies that are done in later years.
+2. These early studies appear to have a far higher effect size (lnRR) compared with studies that are done in later years.
 
-Now, we test the correlation between publication year and InRR with multilevel meta-regression.
+Now, we test the correlation between publication year and lnRR with multilevel meta-regression.
 ```{r yMLMR, message = F, warning = F}
 # do multilevel meta-regression
-yMLMR <- rma.mv(InRR ~ Year_c + InRR_V, V = InRR_V, 
+yMLMR <- rma.mv(lnRR ~ Year_c + lnRR_V, V = lnRR_V, 
                 random = list(~1 | Study,
                               ~1 | Obs),
                 test = "t",
                 dfs = "contain",
-                data = yInRR)
+                data = ylnRR)
 ```
 
-Now, we calculate how many variation does time when results were published explain in InRR.
+Now, we calculate how many variation does time when results were published explain in lnRR.
 ```{r r2_year, message = F}
 # calculate heterogeneity
 r2_year <- r2_ml(yMLMR)
 r2_year
 ```
-The time-lag explains `r r2_year[1]` of the variation in InRR. As we got from the Figure \@ref(fig:year), there is not a strong evidence for time-lag bias.
+The time-lag explains `r r2_year[1]` of the variation in lnRR. As we got from the Figure \@ref(fig:year), there is a evidence for time-lag bias.
 
-To show whether or not there is a file-drawer bias between InRR and precision (inverse sampling variance), we make a plot to see the correlation between InRR and precision.
-```{r precision, message = F, warning = F, fig.cap = "Relationship between InRR and precision (1/vInRR)."}
-ggplot(yInRR, aes(x = (1 / InRR_V), y = InRR)) +
+## File-drawer Bias
+
+To show whether or not there is a file-drawer bias between lnRR and precision (inverse sampling variance), let's make a plot to see the correlation between lnRR and precision.
+```{r precision, message = F, warning = F, fig.cap = "Relationship between lnRR and precision (1/vlnRR)."}
+ggplot(ylnRR, aes(x = (1 / lnRR_V), y = lnRR)) +
   # make a point plot with different size of different precision
   geom_point(alpha = 0.3) +
   # make a regression line with linear model
   geom_smooth(method = "lm", col = "red") +
   # for aesthetics
-  labs(x = "Precision (1/vInRR)", y = "Log Response Ratio (InRR)") + theme_classic() + xlim(0,100)
+  labs(x = "Precision (1/vlnRR)", y = "Log Response Ratio (lnRR)") + theme_classic() + xlim(0,100)
 ```
 
-We see from the Figure \@ref(fig:precision) that there are many values appear in the upper left and lower left corners of the figure, which have low precision. It suggests that some studies showing big effect size sometime also have a big sampling variance. However, regardless of accuracy, most studies show that InRR is close to 0 (no effect).
+We can see from the Figure \@ref(fig:precision) that there are many values appear in the upper left and lower left corners of the figure, which have low precision. It suggests that some studies showing big effect size sometime also have a big sampling variance. However, regardless of accuracy, most studies show that lnRR is close to 0 (no effect).
 
 Then, we can do multilevel meta-regression again to test the correlation.
 ```{r pMLMR, message = F, warning = F}
 # do multilevel meta-regression
-pMLMR <- rma.mv(InRR ~ (1 / InRR_V), V = InRR_V, 
+pMLMR <- rma.mv(lnRR ~ (1 / lnRR_V), V = lnRR_V, 
                 random = list(~1 | Study,
                               ~1 | Obs),
                 test = "t",
                 dfs = "contain",
-                data = yInRR)
+                data = ylnRR)
 ```
 
-Then, we calculate how many variation does precision explain in InRR.
+Then, we calculate how many variation does precision explain in lnRR.
 ```{r r2_precision, message = F}
 # calculate heterogeneity
 r2_precision <- r2_ml(pMLMR)
 r2_precision
 ```
-The precision explains `r r2_precision[1]` of the variation in InRR. As we got from the Figure \@ref(fig:precision), there is no strong correlation between InRR and precision.
+The precision explains `r r2_precision[1]` of the variation in lnRR. As we got from the Figure \@ref(fig:precision), there is no strong correlation between lnRR and precision.
+
+## IF Bias
 
 We can make more analyses with another moderator to see the potential publication bias:
 
-Use `Pub_year_IF` as a moderator. We can test the correlation between impact factors and InRR with multilevel meta-regression.
+Use `Pub_year_IF` as a moderator. We can test the correlation between impact factors and lnRR with multilevel meta-regression.
 
-First, let's make a plot to see whether or not mean InRRs change with impact factors.
-```{r if, message = F, fig.width = 20 ,fig.cap = "Relationship between InRR and different journals. Points are scaled in relation to their precision (1/sqrt(InRR_V)). Small points indicate effects with low precision or high sampling varaince"}
+First, let's make a plot to see whether or not mean lnRRs change with impact factors.
+```{r if, message = F, fig.width = 20 ,fig.cap = "Relationship between lnRR and different impact factors. Points are scaled in relation to their precision (1/sqrt(lnRR_V)). Small points indicate effects with low precision or high sampling varaince"}
 # use online publication time as year of publication
-ggplot(yInRR, aes(x = Pub_year_IF, y = InRR)) +
+ggplot(ylnRR, aes(x = Pub_year_IF, y = lnRR)) +
   # make a point plot with different size of different precision
-  geom_point(alpha = 0.3, aes(size = 1/sqrt(InRR_V))) +
+  geom_point(alpha = 0.3, aes(size = 1/sqrt(lnRR_V))) +
   # make a regression line with linear model
   geom_smooth(method = "lm", col = "red") +
   # for aesthetics
-  labs(x = "Publication Year", y = "Log Response Ratio (InRR)", size = "Precision (1/SE)") + theme_classic()
+  labs(x = "Publication Year", y = "Log Response Ratio (lnRR)", size = "Precision (1/SE)") + theme_classic()
 ```
 
 We can see some hint from the Figure \@ref(fig:if): Some journals with high impact factors prefer to publish studies with large effect sizes, even though their precision are small.
 
-Now, we test the correlation between impact factors and InRR with multilevel meta-regression.
+Now, we test the correlation between impact factors and lnRR with multilevel meta-regression.
 ```{r iMLMR, message = F, warning = F}
 # do multilevel meta-regression
-iMLMR <- rma.mv(InRR ~ Pub_year_IF + InRR_V, V = InRR_V, 
+iMLMR <- rma.mv(lnRR ~ Pub_year_IF + lnRR_V, V = lnRR_V, 
                 random = list(~1 | Study,
                               ~1 | Obs),
                 test = "t",
                 dfs = "contain",
-                data = yInRR)
+                data = ylnRR)
 ```
 
-Then, we calculate how many variation does time when results were published explain in InRR.
+Then, we calculate how many variation does time when results were published explain in lnRR.
 ```{r r2_if, message = F}
 # calculate heterogeneity
 r2_if <- r2_ml(iMLMR)
 r2_if
 ```
-The time-lag explains `r r2_if[1]` of the variation in InRR. As we got from the Figure \@ref(fig:if), there is a strong evidence for publication bias that some journals are more likely to publish studies with high effect size.
+The time-lag explains `r r2_if[1]` of the variation in lnRR. As we got from the Figure \@ref(fig:if), there is a strong evidence for publication bias that some journals are more likely to publish studies with high effect size.
 
 Up to now, based on the results above, we can make a summary for out publication biases analyses.
 
@@ -601,75 +617,80 @@ We can see from the Figure \@ref(fig:year) and MLMR anlysis, those early studies
 
 We can see from the Figure \@ref(fig:if) and MLMR analysis, some journals with high impact factors are more likely to publish studies with large effect sizes, even though their precision are small. This bias probably caused by the journal with high IF want to publish more "outstanding" results in one field, rather than a lot of insignificant results.
 
-Studies Contributing to Bias
+## Studies Contributing to Bias
 
 Now, we start to identify any studies contributing to publication bias discussed above.
 
-For the significance bias, it seems like a overall probem that cannot by correct by removing some of these studies. To avoid this bias, we can only hope that journals will treat any results equally, regardless of whether they are significant or not. On the other hand, researchers should also ensure these insignificant results are not caused by mistakes. In other words, the insignificant results should also be "reliable".
+1. For the significance bias, it seems like an overall problem that cannot correct by removing some of these studies. To avoid this bias, we can find more non-paper sources (e.g. government report) and hope that journals will treat any results equally, regardless whether they are significant or not. On the other hand, researchers should also ensure these insignificant results are not caused by errors. In other words, the insignificant results should also be "reliable".
 
-For the time-lag bias, we can filter the "outstanding" results in year `2009`, `2010` and `2014`.
+2. For the time-lag bias, we can filter the "outstanding" results in year `2009`, `2010` and `2014`.
 ```{r findy, message = F}
 # filter the outstanding studies
-head(filter(cInRR, (Year_.online. == 2009 & InRR > 5) | (Year_.online. == 2010 & InRR > 5) | (Year_.online. == 2014 & InRR > 5)))
+head(filter(clnRR, (Year_.online. == 2009 & lnRR > 5) | (Year_.online. == 2010 & lnRR > 5) | (Year_.online. == 2014 & lnRR > 5)))
 ```
 
-We can see the outstanding values are from study `a2` and `a3`. Let's remove the two study and make a plot again to see the time-lag bias.
-```{r filtery, message = F, fig.cap = "Edited relationship between InRR and the year of publication."}
+We can see the outstanding values are from studies `a2` and `a3`. Let's remove the two study and make a plot again to see the time-lag bias.
+```{r filtery, message = F, fig.cap = "Edited relationship between lnRR and the year of publication."}
 # filter out the two studies
-fInRR <- filter(yInRR, (Study != "a2" & Study != "a3" & Study != "a31"))
+flnRR <- filter(ylnRR, (Study != "a2" & Study != "a3" & Study != "a31"))
 
 # plot again
-ggplot(fInRR, aes(x = Year_.online., y = InRR)) +
+ggplot(flnRR, aes(x = Year_.online., y = lnRR)) +
   # make a point plot with different size of different precision
-  geom_point(alpha = 0.3, aes(size = 1/sqrt(InRR_V))) +
+  geom_point(alpha = 0.3, aes(size = 1/sqrt(lnRR_V))) +
   # make a regression line with linear model
   geom_smooth(method = "lm", col = "red") +
   # for aesthetics
-  labs(x = "Publication Year", y = "Log Response Ratio (InRR)", size = "Precision (1/SE)") + theme_classic()
+  labs(x = "Publication Year", y = "Log Response Ratio (lnRR)", size = "Precision (1/SE)") + theme_classic()
 ```
 
-For the time-lag bias, we can filter the "outstanding" results with IF > 9.
+It looks less bias now.
+
+3. For the time-lag bias, we can filter the "outstanding" results with IF > 9.
 ```{r findi, message = F}
 # filter the outstanding studies
-head(filter(cInRR, Pub_year_IF > 9))
+head(filter(clnRR, Pub_year_IF > 9))
 ```
 
-We can see the outstanding values are from study `a1` and `a3`. `a3` is outstanding twice! Let's remove the two study and make a plot again to see the time-lag bias.
-```{r filteri, message = F, fig.width = 20, fig.cap = "Edited relationship between InRR and the imoact factors."}
+We can see the outstanding values are from study `a1` and `a3`. The study `a3` is outstanding twice! Let's remove the two study and make a plot again to see the time-lag bias.
+```{r filteri, message = F, fig.width = 20, fig.cap = "Edited relationship between lnRR and the imoact factors."}
 # filter out the two studies
-fInRR <- filter(yInRR, (Study != "a1" & Study != "a3" & Study != "a31"))
+flnRR <- filter(ylnRR, (Study != "a1" & Study != "a3" & Study != "a31"))
 
 # plot again
-ggplot(fInRR, aes(x = Pub_year_IF, y = InRR)) +
+ggplot(flnRR, aes(x = Pub_year_IF, y = lnRR)) +
   # make a point plot with different size of different precision
-  geom_point(alpha = 0.3, aes(size = 1/sqrt(InRR_V))) +
+  geom_point(alpha = 0.3, aes(size = 1/sqrt(lnRR_V))) +
   # make a regression line with linear model
   geom_smooth(method = "lm", col = "red") +
   # for aesthetics
-  labs(x = "Publication Year", y = "Log Response Ratio (InRR)", size = "Precision (1/SE)") + theme_classic()
+  labs(x = "Publication Year", y = "Log Response Ratio (lnRR)", size = "Precision (1/SE)") + theme_classic()
 ```
 
-Overall, `a3` is really a "suspect" study and should be concerned more. Let's read more on Munday *et al.* (2010).
+It looks less bias now.
 
-In their study, they investigate the effect of ocean acidification to larval clownfish from the Great Barrier Reef. These characteristic corresponds to two elements that we concluded in the the Figure \@ref(fig:forest3) and Figure \@ref(fig:forest4), `Trop` and `larvae`! Meanwhile, the clownfish lives in coral.Ocean acidification is likely to damage corals, which in turn affects the habitat and behaviour of these fish. This is why do we not see such big effect sizes in other studies. So, the big effect size in Munday *et al.* (2010) is not a universal situation. While citing this article, we should also consider its particularity and the insignificant results of other studies, rather than only relying on impact factor.
+Overall, `a3` is really a "suspect" study and should be concerned more. Let's read more on [Munday *et al.* (2010)](https://doi.org/10.1073/pnas.1004519107).
 
-Comparing with a meta-analysis by Clement *et al.* (2022), my updated meta-analysis results and their paper all focus on publication including methodological biases, selective publication bias, time-lag bias and citation bias. Because the new added paper from Clark *et al.* (2020) also just showed weak correlation between acidification and fish activity.
+In their study, they investigate the effect of ocean acidification to larval clownfish from the Great Barrier Reef. These characteristic corresponds to two elements that we concluded in the the Figure \@ref(fig:forest3) and Figure \@ref(fig:forest4), `Trop` and `larvae`! Meanwhile, the clownfish lives in coral. Ocean acidification is likely to damage corals, which in turn affects the habitat and behaviour of these fish. This is why do we not see such big effect sizes in other studies. So, the big effect size in [Munday *et al.* (2010)](https://doi.org/10.1073/pnas.1004519107). could not be a universal situation. When citing this article, we should also consider its particularity and the insignificant results of other studies, rather than only relying on impact factor.
 
-Remarkably, in the original data file from Clement *et al.* (2022), the value of column `Average_n` should be the average of the column `ctrl.n` and `oa.n`. But entries of the study `a2` seem not.
+Comparing with a meta-analysis by [Clement *et al.* (2022)](https://doi.org/10.1371/journal.pbio.3001511), my updated meta-analysis results and their paper all focus on publication including methodological biases, selective publication bias, time-lag bias and citation bias. Because the new added paper from [Clark *et al.* (2020)](https://doi.org/10.1038/s41586-019-1903-y) also just showed weak correlation between acidification and fish activity, my main findings are similar to [Clement *et al.* (2022)](https://doi.org/10.1371/journal.pbio.3001511).
 
+Remarkably, in the original data file `journal.pbio.3001511.s006.csv` from [Clement *et al.* (2022)](https://doi.org/10.1371/journal.pbio.3001511), the entries of column `Average_n` should be the average of the column `ctrl.n` and `oa.n`. But the entries of the study `a2` seem not.
 ```{r mis, message = F}
 # show study a2
 tibble(data$Study, data$Average_n, data$ctrl.n, data$oa.n) %>% filter(., data$Study == "a2")
 ```
 
 
-The authors probably made some mistakes, So, these kind of type error can also be "sampling variance", but we should try our best to avoid it.
+The authors probably made some errors, So, these kind of type error can also be "sampling variance", but we should try our best to avoid them.
 
-## References
+# **References**
 
+CLARK, T. D., RABY, G. D., ROCHE, D. G., BINNING, S. A., SPEERS-ROESCH, B., JUTFELT, F. & SUNDIN, J. 2020. Ocean acidification does not impair the behaviour of coral reef fishes. *Nature*, 577, 370-375.
 
+CLEMENTS, J. C., SUNDIN, J., CLARK, T. D. & JUTFELT, F. 2022. Meta-analysis reveals an extreme “decline effect” in the impacts of ocean acidification on fish behavior. *PLOS Biology*, 20, e3001511.
 
-
+MUNDAY, P. L., DIXSON, D. L., MCCORMICK, M. I., MEEKAN, M., FERRARI, M. C. O. & CHIVERS, D. P. 2010. Replenishment of fish populations is threatened by ocean acidification. *Proceedings of the National Academy of Sciences*, 107, 12930-12934
 
 
 
