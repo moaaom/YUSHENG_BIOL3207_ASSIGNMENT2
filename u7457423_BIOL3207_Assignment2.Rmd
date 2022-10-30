@@ -171,8 +171,6 @@ colnames(data) <- gsub(" ", "_", colnames(data))
 data
 ```
 
-
-
 2. Entries of species names have spaces. Let's rename them again.Less spaces is always better.
 ```{r renamesp, message = F}
 # replace spaces by underline with gsub()
@@ -198,8 +196,6 @@ data <- tibble(Obs = 1 : nrow(data), data)
 # have a quick look
 head(data)
 ```
-
-
 
 5. Change the classes of `Year_(online)`, `Year_(print)`, `Obs` and `Study` columns to factor
 ```{r class, message = F}
@@ -232,7 +228,7 @@ InRR <- escalc(measure= "ROM", m1i = oa.mean, sd1i = oa.sd, n1i = oa.n, m2i = ct
 head(InRR)
 ```
 
-Oops! We have some NaNs. They are meaningless to our the rest study. Let's remove them.
+Oops! We have some NaNs. This is because there are some negative value in `ctrl.mean` and `oa.mean`, which cause the logarithm to fail to be calculated. They are  meaningless to our the rest study. Let's remove them.
 ```{r nanrm, message = F}
 # remove rows containing NA
 cInRR <- InRR %>% filter(., complete.cases(.$InRR) & complete.cases(.$InRR_V))
@@ -308,7 +304,145 @@ Now, we can do a summary of these overall meta-analysis above:
  
 3. From the heterogeneity analysis, we do have a significant amount of heterogeneity among effects (Q = `r MLMA$QE`, df = 806, p = <0.001), with effect sizes expected to be as low as `r preMLMA$pi.lb` to as high as `r preMLMA$pi.ub`. This interval interval can also be supported with the Figure \@ref(fig:forest1) that the horizontal solid black line representing the 95% confidence interval is very close to the vertical dotted line (0 of InRR).
 
-4. From the heterogeneity analysis, 95% of the time (*I<sup>2</sup>*total = `r i2[1]`). Differences among study and obvious explain `r i2[2]` and `r i2[3]` of effect size variation, respectively. 
+4. From the heterogeneity analysis, 95% of the time (*I<sup>2</sup>*total = `r i2[1]`). Differences among study and obvious explain `r i2[2]` and `r i2[3]` of effect size variation, respectively.
+
+We can make more forest plots with other moderators:
+
+1. Use `Year_.online.` as a moderator. We can test the correlation between publication year and InRR with multilevel meta-regression.
+```{r ymMLMR, message = F, warning = F}
+# do multilevel meta-regression
+ymMLMR <- rma.mv(InRR ~ Year_.online., V = InRR_V, 
+                random = list(~1 | Study,
+                              ~1 | Obs),
+                test = "t",
+                dfs = "contain",
+                data = yInRR)
+ymMLMR
+```
+
+Then, make a forest plot to show the statistics above visually.
+```{r forest2, message = F, fig.cap = "Orchard plot showing the mean InRR of each publication year. k = the number of effect sizes and the number of studies are in brackets. The number of samples is shown in blue circle"}
+# use orchard_plot() to make a modified forest plot
+# argument N = "Average_n" means show the sample size instead of precision
+orchard_plot(ymMLMR, mod = "Year_.online.", group = "Study", data = cInRR, xlab = "Log Response Ratio (InRR)", angle = 45, N = "Average_n")
+```
+
+We can see from the Figure \@ref(fig:forest2), the black hollow circle representing the mean InRR of year `2009` and `2010` are relatively far from the vertical dotted line (0 of InRR). This could suggest that early studies appear to have a far higher effect size.
+
+Finally, we calculate how many variation does time when results were published explain in InRR.
+```{r r2_y, message = F}
+# calculate heterogeneity
+r2_y <- r2_ml(ymMLMR)
+r2_y
+```
+
+The publication year explains `r r2_y[1]` of the variation in InRR. As we got from the Figure \@ref(fig:forest2), there could be a correlation between InRR and publication year. We will test it again in details in publication bias part below.
+
+
+2. Use `Climate_.FishBase.` as a moderator. We can test the correlation between different climatic region and InRR with multilevel meta-regression.
+```{r smMLMR, message = F, warning = F}
+# do multilevel meta-regression
+cmMLMR <- rma.mv(InRR ~ Climate_.FishBase., V = InRR_V, 
+                random = list(~1 | Study,
+                              ~1 | Obs),
+                test = "t",
+                dfs = "contain",
+                data = yInRR)
+```
+
+Then, make a forest plot to show the statistics above visually.
+```{r forest3, message = F, fig.cap = "Orchard plot showing the mean InRR of impact factor. k = the number of effect sizes and the number of studies are in brackets. The number of samples is shown in blue circle"}
+# use orchard_plot() to make a modified forest plot
+# argument N = "Average_n" means show the sample size instead of precision
+orchard_plot(cmMLMR, mod = "Climate_.FishBase.", group = "Study", data = cInRR, xlab = "Log Response Ratio (InRR)", angle = 45, N = "Average_n")
+```
+
+We can see from the Figure \@ref(fig:forest3), the black hollow circle representing the mean InRR of climatic region `Deep` and `Trop` are relatively far from the vertical dotted line (0 of InRR). This could suggest that fishes in the two region are more likely to be affected by ocean acidification.
+
+Finally, we calculate how many variation does different regions explain in InRR.
+```{r r2_c, message = F}
+# calculate heterogeneity
+r2_c <- r2_ml(cmMLMR)
+r2_c
+```
+
+The climatic region explains `r r2_c[1]` of the variation in InRR. As we got from the Figure \@ref(fig:forest3), there could be a correlation between InRR and climatic region.
+
+3. Use `Life_stage` as a moderator. We can test the correlation between different life stage and InRR with multilevel meta-regression.
+```{r lmMLMR, message = F, warning = F}
+# do multilevel meta-regression
+lmMLMR <- rma.mv(InRR ~ Life_stage, V = InRR_V, 
+                random = list(~1 | Study,
+                              ~1 | Obs),
+                test = "t",
+                dfs = "contain",
+                data = yInRR)
+
+```
+
+Then, make a forest plot to show the statistics above visually.
+```{r forest4, message = F, fig.cap = "Orchard plot showing the mean InRR of impact factor. k = the number of effect sizes and the number of studies are in brackets. The number of samples is shown in blue circle"}
+# use orchard_plot() to make a modified forest plot
+# argument N = "Average_n" means show the sample size instead of precision
+orchard_plot(lmMLMR, mod = "Life_stage", group = "Study", data = cInRR, xlab = "Log Response Ratio (InRR)", angle = 45, N = "Average_n")
+```
+
+We can see from the Figure \@ref(fig:forest4), the black hollow circle representing the mean InRR of life stage `Larvae` is relatively far from the vertical dotted line (0 of InRR). This could suggest that fish larvae is more likely to be affected by ocean acidification.
+
+Finally, we calculate how many variation does different regions explain in InRR.
+```{r r2_l, message = F}
+# calculate heterogeneity
+r2_l <- r2_ml(lmMLMR)
+r2_l
+```
+
+The life stage explains `r r2_l[1]` of the variation in InRR. As we got from the Figure \@ref(fig:forest4), there could be a correlation between InRR and life stage.
+
+4. Use `Journal` as a moderator. We can test the correlation between different journals and InRR with multilevel meta-regression.
+```{r jmMLMR, message = F, warning = F}
+# do multilevel meta-regression
+jmMLMR <- rma.mv(InRR ~ Journal, V = InRR_V, 
+                random = list(~1 | Study,
+                              ~1 | Obs),
+                test = "t",
+                dfs = "contain",
+                data = yInRR)
+
+```
+
+Because there are so many journals, we do not make a forest plot again.
+
+Finally, we calculate how many variation does different journals explain in InRR.
+```{r r2_j, message = F}
+# calculate heterogeneity
+r2_j <- r2_ml(jmMLMR)
+r2_j
+```
+
+The life stage explains `r r2_j[1]` of the variation in InRR. So, there could be a correlation between InRR and different journals. Some journals could be more likely publish some kinds of studies (e.g. high effect size).
+
+5. Use `Species` as a moderator. We can test the correlation between different species and InRR with multilevel meta-regression.
+```{r smMLMR, message = F, warning = F}
+# do multilevel meta-regression
+smMLMR <- rma.mv(InRR ~ Species, V = InRR_V, 
+                random = list(~1 | Study,
+                              ~1 | Obs),
+                test = "t",
+                dfs = "contain",
+                data = yInRR)
+
+```
+
+Because there are so many species, we do not make a forest plot again.
+
+Finally, we calculate how many variation does different species explain in InRR.
+```{r r2_j, message = F}
+# calculate heterogeneity
+r2_s <- r2_ml(smMLMR)
+r2_s
+```
+
+The life stage explains `r r2_s[1]` of the variation in InRR. So, there could be a correlation between InRR and different species. Some species could be more sensitive to ocean acidification.
 
 ## Publication Biases
 
@@ -339,6 +473,8 @@ First, let's centre the `Year_.online.` variable by subtracting every value of `
 # centre the Year_.online.
 yInRR <- cInRR %>% mutate(Year_c = as.numeric(Year_.online.) - mean(as.numeric(Year_.online.)))
 
+yInRR <- yInRR %>% group_by(Year_.online.) %>% mutate(ymean = mean(InRR))
+
 # have a quicl look
 head(yInRR)
 ```
@@ -350,13 +486,18 @@ ggplot(yInRR, aes(x = Year_.online., y = InRR)) +
   # make a point plot with different size of different precision
   geom_point(alpha = 0.3, aes(size = 1/sqrt(InRR_V))) +
   # make a regression line with linear model
-  geom_smooth(method = "lm") +
+  geom_smooth(method = "lm", col = "red") +
   # for aesthetics
-  labs(x = "Publication Year", y = "Log Response Ratio (InRR)", size = "Precision (1/SE)") +
-  theme_classic()
+  labs(x = "Publication Year", y = "Log Response Ratio (InRR)", size = "Precision (1/SE)") + theme_classic()
 ```
 
-It seems like there is a slight correlation between publication year and InRR in the Figure \@ref(fig:year). Now, we test it with multilevel meta-regression.
+We see some hint from the Figure \@ref(fig:year):
+
+1. It seems like there is a slight correlation between publication year and InRR.
+
+2. These early studies appear to have a far higher effect size (InRR) compared with studies that are done in later years.
+
+Now, we test the correlation between publication year and InRR with multilevel meta-regression.
 ```{r yMLMR, message = F, warning = F}
 # do multilevel meta-regression
 yMLMR <- rma.mv(InRR ~ Year_c + InRR_V, V = InRR_V, 
@@ -368,23 +509,89 @@ yMLMR <- rma.mv(InRR ~ Year_c + InRR_V, V = InRR_V,
 ```
 
 Now, we calculate how many variation does time when results were published explain in InRR.
-```{r}
+```{r r2_year, message = F}
 # calculate heterogeneity
 r2_year <- r2_ml(yMLMR)
 r2_year
 ```
 The time-lag explains `r r2_year[1]` of the variation in InRR. As we got from the Figure \@ref(fig:year), there is not a strong evidence for time-lag bias.
 
+To show whether or not there is a file-drawer bias between InRR and precision (inverse sampling variance), we make a plot to see the correlation between InRR and precision.
+```{r precision, message = F, warning = F, fig.cap = "Relationship between InRR and precision (1/vInRR)."}
+ggplot(yInRR, aes(x = (1 / InRR_V), y = InRR)) +
+  # make a point plot with different size of different precision
+  geom_point(alpha = 0.3) +
+  # make a regression line with linear model
+  geom_smooth(method = "lm", col = "red") +
+  # for aesthetics
+  labs(x = "Precision (1/vInRR)", y = "Log Response Ratio (InRR)") + theme_classic() + xlim(0,100)
+```
 
+We see from the Figure \@ref(fig:precision) that there are many values appear in the upper left and lower left corners of the figure, which have low precision. It suggests that some studies showing big effect size sometime also have a big sampling variance. However, regardless of accuracy, most studies show that InRR is close to 0 (no effect).
 
+Then, we can do multilevel meta-regression again to test the correlation.
+```{r pMLMR, message = F, warning = F}
+# do multilevel meta-regression
+pMLMR <- rma.mv(InRR ~ (1 / InRR_V), V = InRR_V, 
+                random = list(~1 | Study,
+                              ~1 | Obs),
+                test = "t",
+                dfs = "contain",
+                data = yInRR)
+```
 
+Then, we calculate how many variation does precision explain in InRR.
+```{r r2_precision, message = F}
+# calculate heterogeneity
+r2_precision <- r2_ml(pMLMR)
+r2_precision
+```
+The precision explains `r r2_precision[1]` of the variation in InRR. As we got from the Figure \@ref(fig:precision), there is no strong correlation between InRR and precision.
 
+We can make more analyses with another moderator to see the potential publication bias:
 
+Use `Pub_year_IF` as a moderator. We can test the correlation between impact factors and InRR with multilevel meta-regression.
 
+First, let's make a plot to see whether or not mean InRRs change with impact factors.
+```{r if, message = F, fig.width = 20 ,fig.cap = "Relationship between InRR and different journals. Points are scaled in relation to their precision (1/sqrt(InRR_V)). Small points indicate effects with low precision or high sampling varaince"}
+# use online publication time as year of publication
+ggplot(yInRR, aes(x = Pub_year_IF, y = InRR)) +
+  # make a point plot with different size of different precision
+  geom_point(alpha = 0.3, aes(size = 1/sqrt(InRR_V))) +
+  # make a regression line with linear model
+  geom_smooth(method = "lm", col = "red") +
+  # for aesthetics
+  labs(x = "Publication Year", y = "Log Response Ratio (InRR)", size = "Precision (1/SE)") + theme_classic()
+```
 
+We can see some hint from the Figure \@ref(fig:if): Some journals with high impact factors prefer to publish studies with large effect sizes, even though their precision are small.
 
+Now, we test the correlation between impact factors and InRR with multilevel meta-regression.
+```{r iMLMR, message = F, warning = F}
+# do multilevel meta-regression
+iMLMR <- rma.mv(InRR ~ Pub_year_IF + InRR_V, V = InRR_V, 
+                random = list(~1 | Study,
+                              ~1 | Obs),
+                test = "t",
+                dfs = "contain",
+                data = yInRR)
+```
 
+Then, we calculate how many variation does time when results were published explain in InRR.
+```{r r2_if, message = F}
+# calculate heterogeneity
+r2_if <- r2_ml(iMLMR)
+r2_if
+```
+The time-lag explains `r r2_if[1]` of the variation in InRR. As we got from the Figure \@ref(fig:if), there is a strong evidence for publication bias that some journals are more likely to publish studies with high effect size.
 
+Up to now, we can make a summary for out publication biases analyses.
+
+1. About the p-value of studies, we can see in the Figure \@ref(fig:funnel):
+
+1. There are relatively less points in the bottom right corner than bottom left corner. This suggests that researches that show ocean acidification slightly make the fish more active are less likely to be published.
+
+2. There are relativel more points in the right part with low Inverse Standard Error than left part. This suggest researches that show ocean acidification significantly make the fish more active are easy to be published, although they have low sample sizes.
 
 
 
