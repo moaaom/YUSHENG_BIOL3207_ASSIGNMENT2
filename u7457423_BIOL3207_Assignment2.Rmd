@@ -315,7 +315,7 @@ Now, we can do a summary of these overall meta-analysis above:
  
 3. From the heterogeneity analysis, we do have a significant amount of heterogeneity among effects (Q = `r MLMA$QE`, df = 806, p = <0.001), with effect sizes expected to be as low as `r preMLMA$pi.lb` to as high as `r preMLMA$pi.ub`. This interval interval can also be supported with the Figure \@ref(fig:forest1) that the horizontal solid black line representing the 95% confidence interval.
 
-4. From the heterogeneity analysis, 95% of the time (*I<sup>2</sup>*total = `r i2[1]`). Differences among study and obvious explain `r i2[2]` and `r i2[3]` of effect size variation, respectively.
+4. From the heterogeneity analysis, 95% of the time (*I<sup>2</sup>*total = `r i2[1]`). Differences among study and observation explain `r i2[2]` and `r i2[3]` of effect size variation, respectively.
 
 We can make more forest plots with other moderators:
 
@@ -479,7 +479,7 @@ Now, we see some hints from the Figure \@ref(fig:funnel):
 
 2. There are relativel more points in the right part with low Inverse Standard Error than left part. This suggest researches that show ocean acidification significantly make the fish more active are easy to be published, although they have low sample sizes.
 
-## Time-lag Bias.
+## Time-lag Bias
 
 First, let's centre the `Year_(online)` variable by subtracting every value of `Year_(online)` by the `mean(year)`.
 ```{r cyear, message = F}
